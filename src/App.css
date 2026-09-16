@@ -1,0 +1,194 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f5f5f7;
+  color: #1a1a1a;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  padding: 1rem 1.5rem;
+  background: #1a1a2e;
+  color: white;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.app-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panel {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.muted {
+  color: #777;
+  font-size: 0.9rem;
+}
+
+.document-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.document-table th,
+.document-table td {
+  text-align: left;
+  padding: 0.4rem 0.3rem;
+  border-bottom: 1px solid #eee;
+}
+
+.upload-status-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+}
+
+.upload-status {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+}
+
+.upload-status--error {
+  color: #c0392b;
+}
+
+.upload-status--done {
+  color: #27ae60;
+}
+
+.panel--chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.chat-form textarea {
+  resize: vertical;
+  font-family: inherit;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.chat-form button {
+  align-self: flex-end;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #1a1a2e;
+  color: white;
+  cursor: pointer;
+}
+
+.chat-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  color: #c0392b;
+}
+
+.conversation-list {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.answer-card {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.answer-card__question {
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.answer-card__answer {
+  white-space: pre-wrap;
+  margin: 0 0 0.5rem;
+}
+
+.answer-card__sources {
+  font-size: 0.85rem;
+  color: #555;
+  border-top: 1px dashed #ddd;
+  padding-top: 0.5rem;
+}
+
+.answer-card__sources ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.answer-card--pending {
+  border-color: #cfd3ff;
+  background: #f5f6ff;
+}
+
+.answer-card__thinking {
+  color: #666;
+  font-style: italic;
+  margin: 0;
+}
+
+.answer-card__cursor {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: #1a1a2e;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
