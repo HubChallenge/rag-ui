@@ -18,6 +18,11 @@ export interface DeleteResponse {
   chunks_deleted: number;
 }
 
+export interface ResetResponse {
+  chunks_deleted: number;
+  files_deleted: number;
+}
+
 export interface SourceRef {
   source: string;
   page: number | null;
@@ -52,3 +57,11 @@ export type TimelineItem =
       phase: "thinking" | "streaming" | "done";
       error?: string;
     };
+
+export interface Session {
+  id: string;
+  title: string;
+  items: TimelineItem[];
+  createdAt: string;
+  updatedAt: string;
+}

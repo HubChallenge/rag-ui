@@ -3,12 +3,29 @@ import { uploadDocument } from "../api/client";
 
 interface FileStatus {
   name: string;
+  size: number;
   status: "pending" | "uploading" | "done" | "error";
   message?: string;
 }
 
 interface UploadPanelProps {
   onUploaded: () => void;
+}
+
+const LARGE_FILE_BYTES = 5 * 1024 * 1024;
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}
+
+function statusLabel(s: FileStatus): string {
+  if (s.status === "error") return s.message ?? "Erreur";
+  if (s.status === "done") return s.message ?? "Terminé";
+  if (s.status === "pending") return "En attente…";
+  return s.size > LARGE_FILE_BYTES
+    ? "Indexation en cours… cela peut prendre plusieurs minutes pour un gros fichier"
+    : "Indexation en cours…";
 }
 
 export function UploadPanel({ onUploaded }: UploadPanelProps) {
@@ -19,7 +36,7 @@ export function UploadPanel({ onUploaded }: UploadPanelProps) {
     if (!fileList || fileList.length === 0) return;
 
     const files = Array.from(fileList);
-    setStatuses(files.map((f) => ({ name: f.name, status: "pending" })));
+    setStatuses(files.map((f) => ({ name: f.name, size: f.size, status: "pending" })));
     setIsUploading(true);
 
     for (const file of files) {
@@ -63,8 +80,13 @@ export function UploadPanel({ onUploaded }: UploadPanelProps) {
         <ul className="upload-status-list">
           {statuses.map((s) => (
             <li key={s.name} className={`upload-status upload-status--${s.status}`}>
-              <span>{s.name}</span>
-              <span>{s.status === "error" ? s.message : s.message ?? s.status}</span>
+              <span className="upload-name">
+                {s.name} <span className="upload-size">({formatSize(s.size)})</span>
+              </span>
+              <span className="upload-status-text">
+                {s.status === "uploading" && <span className="pending-dot" />}
+                {statusLabel(s)}
+              </span>
             </li>
           ))}
         </ul>

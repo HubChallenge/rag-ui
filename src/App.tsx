@@ -3,18 +3,8 @@ import "./App.css";
 import { askQuestionStream, fetchHealth, fetchModels, listDocuments } from "./api/client";
 import { ChatComposer } from "./components/ChatComposer";
 import { Timeline } from "./components/Timeline";
+import { createEmptySession, deriveTitle, loadSessionsState, saveSessionsState } from "./sessions";
 import type { DocumentInfo, HistoryTurn, TimelineItem } from "./types";
-
-const CONVERSATION_STORAGE_KEY = "rag-ui-conversation";
-
-function loadConversation(): TimelineItem[] {
-  try {
-    const raw = localStorage.getItem(CONVERSATION_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as TimelineItem[]) : [];
-  } catch {
-    return [];
-  }
-}
 
 function toHistory(items: TimelineItem[]): HistoryTurn[] {
   return items.flatMap((item): HistoryTurn[] => {
@@ -29,10 +19,15 @@ export default function App() {
   const [models, setModels] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [health, setHealth] = useState("…");
-  const [items, setItems] = useState<TimelineItem[]>(loadConversation);
+  const [initialSessionsState] = useState(() => loadSessionsState());
+  const [sessions, setSessions] = useState(initialSessionsState.sessions);
+  const [activeId, setActiveId] = useState(initialSessionsState.activeId);
   const [running, setRunning] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  const activeSession = sessions.find((s) => s.id === activeId) ?? sessions[0];
+  const items = activeSession?.items ?? [];
   const hasConversation = items.length > 0;
 
   async function refreshDocuments() {
@@ -65,16 +60,33 @@ export default function App() {
   }, [items]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(CONVERSATION_STORAGE_KEY, JSON.stringify(items));
-    } catch {
-      // storage unavailable (private mode, quota, ...) — skip persistence silently
-    }
-  }, [items]);
+    saveSessionsState({ sessions, activeId });
+  }, [sessions, activeId]);
 
-  function updateAssistant(id: string, updater: (item: Extract<TimelineItem, { kind: "assistant" }>) => Extract<TimelineItem, { kind: "assistant" }>) {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id && item.kind === "assistant" ? updater(item) : item))
+  function updateActiveItems(updater: (items: TimelineItem[]) => TimelineItem[]) {
+    setSessions((prev) =>
+      prev.map((s) => {
+        if (s.id !== activeId) return s;
+        const nextItems = updater(s.items);
+        const firstUser = nextItems.find(
+          (i): i is Extract<TimelineItem, { kind: "user" }> => i.kind === "user"
+        );
+        return {
+          ...s,
+          items: nextItems,
+          updatedAt: new Date().toISOString(),
+          title: firstUser ? deriveTitle(firstUser.text) : s.title,
+        };
+      })
+    );
+  }
+
+  function updateAssistant(
+    id: string,
+    updater: (item: Extract<TimelineItem, { kind: "assistant" }>) => Extract<TimelineItem, { kind: "assistant" }>
+  ) {
+    updateActiveItems((items) =>
+      items.map((item) => (item.id === id && item.kind === "assistant" ? updater(item) : item))
     );
   }
 
@@ -82,8 +94,8 @@ export default function App() {
     const history = toHistory(items);
     const assistantId = crypto.randomUUID();
 
-    setItems((prev) => [
-      ...prev,
+    updateActiveItems((items) => [
+      ...items,
       { id: crypto.randomUUID(), kind: "user", text: question },
       {
         id: assistantId,
@@ -130,6 +142,33 @@ export default function App() {
     abortRef.current?.abort();
   }
 
+  function handleCreateSession() {
+    const session = createEmptySession();
+    setSessions((prev) => [...prev, session]);
+    setActiveId(session.id);
+  }
+
+  function handleSwitchSession(id: string) {
+    setActiveId(id);
+  }
+
+  function handleDeleteSession(id: string) {
+    const remaining = sessions.filter((s) => s.id !== id);
+
+    if (remaining.length === 0) {
+      const session = createEmptySession();
+      setSessions([session]);
+      setActiveId(session.id);
+      return;
+    }
+
+    setSessions(remaining);
+    if (id === activeId) {
+      const mostRecent = [...remaining].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+      setActiveId(mostRecent.id);
+    }
+  }
+
   const composer = (
     <ChatComposer
       documents={documents}
@@ -137,6 +176,11 @@ export default function App() {
       models={models}
       selectedModel={selectedModel}
       onSelectModel={setSelectedModel}
+      sessions={sessions}
+      activeSessionId={activeId}
+      onSwitchSession={handleSwitchSession}
+      onCreateSession={handleCreateSession}
+      onDeleteSession={handleDeleteSession}
       health={health}
       running={running}
       onSubmit={handleSubmit}

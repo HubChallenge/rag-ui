@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import type { DocumentInfo } from "../types";
+import type { DocumentInfo, Session } from "../types";
 import { DocumentsPanel } from "./DocumentsPanel";
+import { SessionsPanel } from "./SessionsPanel";
 import { SettingsPopover } from "./SettingsPopover";
 
 const TEXTAREA_MAX_PX = 140;
@@ -11,6 +12,11 @@ interface ChatComposerProps {
   models: string[];
   selectedModel: string;
   onSelectModel: (model: string) => void;
+  sessions: Session[];
+  activeSessionId: string;
+  onSwitchSession: (id: string) => void;
+  onCreateSession: () => void;
+  onDeleteSession: (id: string) => void;
   health: string;
   running: boolean;
   onSubmit: (question: string) => void;
@@ -27,13 +33,18 @@ export function ChatComposer({
   models,
   selectedModel,
   onSelectModel,
+  sessions,
+  activeSessionId,
+  onSwitchSession,
+  onCreateSession,
+  onDeleteSession,
   health,
   running,
   onSubmit,
   onStop,
 }: ChatComposerProps) {
   const [question, setQuestion] = useState("");
-  const [openPopover, setOpenPopover] = useState<"documents" | "settings" | null>(null);
+  const [openPopover, setOpenPopover] = useState<"documents" | "settings" | "sessions" | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   function resizeTextarea() {
@@ -65,7 +76,7 @@ export function ChatComposer({
     }
   }
 
-  function togglePopover(name: "documents" | "settings") {
+  function togglePopover(name: "documents" | "settings" | "sessions") {
     setOpenPopover((prev) => (prev === name ? null : name));
   }
 
@@ -73,6 +84,16 @@ export function ChatComposer({
 
   return (
     <div className="composer-shell">
+      {openPopover === "sessions" && (
+        <SessionsPanel
+          sessions={sessions}
+          activeId={activeSessionId}
+          onSwitch={onSwitchSession}
+          onCreate={onCreateSession}
+          onDelete={onDeleteSession}
+          disabled={running}
+        />
+      )}
       {openPopover === "documents" && (
         <DocumentsPanel documents={documents} onChanged={onDocumentsChanged} />
       )}
@@ -96,6 +117,15 @@ export function ChatComposer({
           disabled={running}
         />
         <div className="composer-toolbar">
+          <button
+            type="button"
+            className={`sessions-chip ${openPopover === "sessions" ? "active" : ""}`}
+            onClick={() => togglePopover("sessions")}
+            aria-expanded={openPopover === "sessions"}
+            title="Gérer les sessions"
+          >
+            Sessions ({sessions.length})
+          </button>
           <button
             type="button"
             className={`docs-chip ${openPopover === "documents" ? "active" : ""}`}

@@ -4,6 +4,7 @@ import type {
   HealthResponse,
   HistoryTurn,
   ModelsResponse,
+  ResetResponse,
   SourceRef,
   UploadResponse,
 } from "../types";
@@ -55,6 +56,11 @@ export async function deleteDocument(source: string): Promise<DeleteResponse> {
     method: "DELETE",
   });
   return handleResponse<DeleteResponse>(response);
+}
+
+export async function resetDocuments(): Promise<ResetResponse> {
+  const response = await fetch(`${BASE_URL}/documents`, { method: "DELETE" });
+  return handleResponse<ResetResponse>(response);
 }
 
 export interface AskStreamCallbacks {

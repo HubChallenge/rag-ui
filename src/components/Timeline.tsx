@@ -1,5 +1,15 @@
 import { useState } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { SourceRef, TimelineItem } from "../types";
+
+const markdownComponents: Components = {
+  a: ({ href, children, ...props }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+      {children}
+    </a>
+  ),
+};
 
 function ThinkingBlock({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
@@ -70,10 +80,12 @@ function AssistantTurn({ item }: { item: Extract<TimelineItem, { kind: "assistan
       )}
       {item.text && (
         <article className="msg-assistant">
-          <p>
-            {item.text}
-            {item.phase === "streaming" && <span className="answer-cursor" aria-hidden />}
-          </p>
+          <div className="markdown-body">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+              {item.text}
+            </ReactMarkdown>
+          </div>
+          {item.phase === "streaming" && <span className="answer-cursor" aria-hidden />}
         </article>
       )}
       {item.error && (
