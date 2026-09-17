@@ -1,4 +1,12 @@
-import type { DeleteResponse, DocumentInfo, HistoryTurn, SourceRef, UploadResponse } from "../types";
+import type {
+  DeleteResponse,
+  DocumentInfo,
+  HealthResponse,
+  HistoryTurn,
+  ModelsResponse,
+  SourceRef,
+  UploadResponse,
+} from "../types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -14,6 +22,16 @@ async function handleResponse<T>(response: Response): Promise<T> {
     throw new Error(detail);
   }
   return response.json() as Promise<T>;
+}
+
+export async function fetchHealth(): Promise<HealthResponse> {
+  const response = await fetch(`${BASE_URL}/health`);
+  return handleResponse<HealthResponse>(response);
+}
+
+export async function fetchModels(): Promise<ModelsResponse> {
+  const response = await fetch(`${BASE_URL}/models`);
+  return handleResponse<ModelsResponse>(response);
 }
 
 export async function uploadDocument(file: File): Promise<UploadResponse> {
@@ -41,13 +59,19 @@ export async function deleteDocument(source: string): Promise<DeleteResponse> {
 
 export interface AskStreamCallbacks {
   onSources?: (sources: SourceRef[]) => void;
-  onThinking?: () => void;
+  onThinking?: (text: string) => void;
   onToken?: (text: string) => void;
+}
+
+export interface AskStreamOptions {
+  model?: string;
+  topK?: number;
+  signal?: AbortSignal;
 }
 
 type StreamEvent =
   | { type: "sources"; sources: SourceRef[] }
-  | { type: "thinking" }
+  | { type: "thinking"; content: string }
   | { type: "token"; content: string }
   | { type: "done" }
   | { type: "error"; message: string };
@@ -56,12 +80,18 @@ export async function askQuestionStream(
   question: string,
   history: HistoryTurn[],
   callbacks: AskStreamCallbacks,
-  topK?: number
+  options: AskStreamOptions = {}
 ): Promise<void> {
   const response = await fetch(`${BASE_URL}/chat/ask`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, history, top_k: topK }),
+    body: JSON.stringify({
+      question,
+      history,
+      top_k: options.topK,
+      model: options.model,
+    }),
+    signal: options.signal,
   });
 
   if (!response.ok || !response.body) {
@@ -93,7 +123,7 @@ export async function askQuestionStream(
 
       const event = JSON.parse(line) as StreamEvent;
       if (event.type === "sources") callbacks.onSources?.(event.sources);
-      else if (event.type === "thinking") callbacks.onThinking?.();
+      else if (event.type === "thinking") callbacks.onThinking?.(event.content);
       else if (event.type === "token") callbacks.onToken?.(event.content);
       else if (event.type === "error") throw new Error(event.message);
     }

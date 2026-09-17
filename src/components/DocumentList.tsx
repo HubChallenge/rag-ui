@@ -24,8 +24,7 @@ export function DocumentList({ documents, onChanged }: DocumentListProps) {
   }
 
   return (
-    <div className="panel">
-      <h2>Documents indexés</h2>
+    <div className="document-list">
       {documents.length === 0 ? (
         <p className="muted">Aucun document indexé pour le moment.</p>
       ) : (

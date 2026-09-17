@@ -51,8 +51,7 @@ export function UploadPanel({ onUploaded }: UploadPanelProps) {
   }
 
   return (
-    <div className="panel">
-      <h2>Importer des documents</h2>
+    <div className="upload-panel">
       <input
         type="file"
         multiple

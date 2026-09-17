@@ -30,10 +30,25 @@ export interface HistoryTurn {
   content: string;
 }
 
-export interface ConversationEntry {
-  id: string;
-  question: string;
-  answer: string;
-  sources: SourceRef[];
-  createdAt: string;
+export interface HealthResponse {
+  status: string;
+  ollama: boolean;
+  qdrant: boolean;
 }
+
+export interface ModelsResponse {
+  models: string[];
+  default: string;
+}
+
+export type TimelineItem =
+  | { id: string; kind: "user"; text: string }
+  | {
+      id: string;
+      kind: "assistant";
+      text: string;
+      thinkingText: string;
+      sources: SourceRef[];
+      phase: "thinking" | "streaming" | "done";
+      error?: string;
+    };
