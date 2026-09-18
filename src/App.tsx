@@ -3,7 +3,7 @@ import "./App.css";
 import { askQuestionStream, fetchHealth, fetchModels, listDocuments } from "./api/client";
 import { ChatComposer } from "./components/ChatComposer";
 import { Timeline } from "./components/Timeline";
-import { createEmptySession, deriveTitle, loadSessionsState, saveSessionsState } from "./sessions";
+import { createEmptySession, deriveTitle, generateId, loadSessionsState, saveSessionsState } from "./sessions";
 import type { DocumentInfo, HistoryTurn, TimelineItem } from "./types";
 
 function toHistory(items: TimelineItem[]): HistoryTurn[] {
@@ -92,11 +92,11 @@ export default function App() {
 
   async function handleSubmit(question: string) {
     const history = toHistory(items);
-    const assistantId = crypto.randomUUID();
+    const assistantId = generateId();
 
     updateActiveItems((items) => [
       ...items,
-      { id: crypto.randomUUID(), kind: "user", text: question },
+      { id: generateId(), kind: "user", text: question },
       {
         id: assistantId,
         kind: "assistant",
